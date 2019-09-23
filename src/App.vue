@@ -1,6 +1,7 @@
 <template>
   <div id="app">
-    <el-container>
+    <el-alert title="教学模式下，按J跳跃，教学模式将录入游戏数据，作为AI的训练数据" type="info" center show-icon></el-alert>
+    <el-container style="margin-top: 8px;">
       <el-aside width="540px">
         <canvas id="flappy" width="500" height="512"></canvas>
         <br />
