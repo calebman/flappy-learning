@@ -45,9 +45,15 @@
                   size="mini"
                   type="primary"
                   :loading="scope.row.trainLoading"
+                  :disabled="scope.row.trainDataCnt < 1"
                   @click="trainBird( scope.row)"
                 >训练</el-button>
-                <el-button size="mini" type="primary" @click="testBird(scope.row)">测试</el-button>
+                <el-button
+                  size="mini"
+                  type="primary"
+                  :disabled="scope.row.trainCnt < 1"
+                  @click="testBird(scope.row)"
+                >测试</el-button>
                 <el-button size="mini" type="danger" @click="removeBird(scope.row)">删除</el-button>
               </template>
             </el-table-column>
@@ -72,7 +78,7 @@ export default class App extends Vue {
   public start() {
     this.game.start();
   }
-  handleSpeedChange(speedLevel) {
+  handleSpeedChange(speedLevel: string) {
     this.game.options.fps = {
       低速: 60,
       中速: 800,
@@ -83,20 +89,20 @@ export default class App extends Vue {
   public createBird() {
     this.game.birdStore.save(new Bird());
   }
-  public teachBird(bird) {
+  public teachBird(bird: Bird) {
     this.game.setBird(bird);
     this.game.start(false);
   }
-  public async trainBird(bird) {
+  public async trainBird(bird: Bird) {
     await bird.train();
     this.game.setBird(bird);
     this.game.start(true);
   }
-  public testBird(bird) {
+  public testBird(bird: Bird) {
     this.game.setBird(bird);
     this.game.start(true);
   }
-  public removeBird(bird) {
+  public removeBird(bird: Bird) {
     this.game.removeBird(bird);
   }
   public mounted() {
