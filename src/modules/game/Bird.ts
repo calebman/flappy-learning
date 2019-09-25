@@ -56,7 +56,7 @@ export default class Bird extends StoreItem {
   public trainDataCnt: number = 0;
   private model: any;
   private trainStorage: IStore<TrainData> | undefined;
-  private readonly modelOptions: any[];
+  private readonly modelOptions: any[] = [{useBias: true, units: 4}];
   private modelLoading: boolean = false;
   private trainLoading: boolean = false;
 
@@ -65,7 +65,7 @@ export default class Bird extends StoreItem {
     super();
     this.init();
     Object.assign(this, options);
-    this.modelOptions = Array.isArray(options.modelOptions) ? options.modelOptions : [];
+    this.modelOptions = Array.isArray(options.modelOptions) ? options.modelOptions : [{useBias: true, units: 4}];
     if (options.id) {
       this.setId(options.id);
       this.getModel();
