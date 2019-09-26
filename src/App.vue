@@ -72,18 +72,21 @@ import Bird from "./modules/game/Bird";
   components: {}
 })
 export default class App extends Vue {
-  public game: FlappyBirdGameEngine = null;
+  public game: any = null;
   public birds: Bird[] = [];
   public speedLevel: string = "低速";
   public start() {
     this.game.start();
   }
   handleSpeedChange(speedLevel: string) {
-    this.game.options.fps = {
-      低速: 60,
-      中速: 800,
-      快速: 8000
-    }[speedLevel];
+    switch (speedLevel) {
+      case "中速":
+        return 8000;
+      case "快速":
+        return 800;
+      default:
+        return 60;
+    }
     this.game.display();
   }
   public createBird() {
