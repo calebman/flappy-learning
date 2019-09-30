@@ -20,6 +20,7 @@ export default class Bird extends StoreItem {
       trainCnt: obj.trainCnt || 0,
       trainDataCnt: obj.trainDataCnt || 0,
       modelOptions: obj.modelOptions,
+      epochs: obj.epochs,
     });
   }
 
@@ -33,6 +34,7 @@ export default class Bird extends StoreItem {
       trainCnt: bird.trainCnt,
       trainDataCnt: bird.trainDataCnt,
       modelOptions: bird.modelOptions,
+      epochs: bird.epochs,
     };
   }
 
@@ -57,6 +59,7 @@ export default class Bird extends StoreItem {
   private model: any;
   private trainStorage: IStore<TrainData> | undefined;
   private readonly modelOptions: any[] = [{useBias: true, units: 4}];
+  private readonly epochs: number = 50;
   private modelLoading: boolean = false;
   private trainLoading: boolean = false;
 
@@ -65,7 +68,6 @@ export default class Bird extends StoreItem {
     super();
     this.init();
     Object.assign(this, options);
-    this.modelOptions = Array.isArray(options.modelOptions) ? options.modelOptions : [{useBias: true, units: 4}];
     if (options.id) {
       this.setId(options.id);
       this.getModel();
@@ -172,11 +174,9 @@ export default class Bird extends StoreItem {
       metrics: ['mse'],
     });
 
-    const batchSize = 32;
-    const epochs = 50;
+    const epochs = this.epochs;
 
     const result = await model.fit(inputs, labels, {
-      batchSize,
       epochs,
       shuffle: true,
       callbacks: tfvis.show.fitCallbacks(
