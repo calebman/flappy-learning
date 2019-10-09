@@ -144,13 +144,8 @@ export default class Bird extends StoreItem {
    */
   public judge(x1: number, x2: number): boolean {
     if (this.alive && this.useAI && this.model) {
-      const { inputMax, inputMin, labelMin, labelMax } = this.generatorTrainData(true);
-      const input = tf.tensor2d([x1, x2], [1, 2])
-        .sub(inputMin)
-        .div(inputMax.sub(inputMin));
+      const input = tf.tensor2d([x1, x2], [1, 2]);
       const prediction = this.model.predict(input)
-        .mul(labelMax.sub(labelMin))
-        .add(labelMin)
         .dataSync();
       // 跳跃的可能性与保持不变的可能性比较
       return prediction[1] > prediction[0];
@@ -264,33 +259,16 @@ export default class Bird extends StoreItem {
     return tf.tidy(() => {
       // Step 1. Shuffle the data
       tf.util.shuffle(data);
-
       // Step 2. Convert data to Tensor
       const inputs = data.map((d) => [d[0], d[1]]);
       // labels [保持不变的可能性, 跳跃的可能性]
       const labels = data.map((d) => d[2] === 1 ? [0, 1] : [1, 0]);
-
       const inputTensor = tf.tensor2d(inputs, [inputs.length, 2]);
       const labelTensor = tf.tensor2d(labels, [labels.length, 2]);
-
-      // Step 3. Normalize the data to the range 0 - 1 using min-max scaling
-      const inputMax = inputTensor.max();
-      const inputMin = inputTensor.min();
-      const labelMax = labelTensor.max();
-      const labelMin = labelTensor.min();
-
-      const normalizedInputs = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
-      const normalizedLabels = labelTensor.sub(labelMin).div(labelMax.sub(labelMin));
-      this.formatTrainData = {
-        inputs: normalizedInputs,
-        labels: normalizedLabels,
-        // Return the min/max bounds so we can use them later.
-        inputMax,
-        inputMin,
-        labelMax,
-        labelMin,
+      return  {
+        inputs: inputTensor,
+        labels: labelTensor,
       };
-      return   this.formatTrainData;
     });
   }
 }

@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <el-alert title="教学模式下，按J跳跃，教学模式将录入游戏数据，作为AI的训练数据" type="info" center show-icon></el-alert>
+    <el-alert title="教学模式下，按J跳跃，该模式将录入游戏数据，作为AI的训练数据" type="info" center show-icon></el-alert>
     <el-container style="margin-top: 8px;">
       <el-aside width="540px">
         <canvas id="flappy" width="500" height="512" data-v-step="3"></canvas>
@@ -17,7 +17,12 @@
           <el-tooltip content="查看新手引导" placement="top">
             <i class="el-icon-question flappy-bird-help" @click="help"></i>
           </el-tooltip>
-          <el-button icon="el-icon-add" style="margin-left: 8px;" data-v-step="1" @click="createBird">创建一个新的模型</el-button>
+          <el-button
+            icon="el-icon-add"
+            style="margin-left: 8px;"
+            data-v-step="1"
+            @click="createBirdModalVisible = true"
+          >创建一个新的模型</el-button>
           <el-divider></el-divider>
           <el-table :data="birds" style="width: 100%">
             <el-table-column prop="createAt" label="创建日期" align="center" width="180px">
@@ -35,16 +40,6 @@
             <el-table-column label="模型训练" align="center">
               <el-table-column prop="trainCnt" label="次数" align="center" width="90px"></el-table-column>
               <el-table-column prop="trainDataCnt" label="数据量" align="center" width="120px"></el-table-column>
-              <el-table-column prop="threshold" label="阈值" align="center" width="150px">
-                <template slot-scope="scope">
-                  <el-input-number
-                    size="small"
-                    v-model="scope.row.threshold"
-                    :step="0.00125"
-                    data-v-step="6"
-                  ></el-input-number>
-                </template>
-              </el-table-column>
             </el-table-column>
             <el-table-column label="操作" align="center">
               <template slot-scope="scope">
@@ -69,31 +64,53 @@
                   data-v-step="7"
                   @click="testBird(scope.row)"
                 >测试</el-button>
-                <el-button size="mini" type="danger" data-v-step="8" @click="removeBird(scope.row)">删除</el-button>
+                <el-button
+                  size="mini"
+                  type="danger"
+                  data-v-step="8"
+                  @click="removeBird(scope.row)"
+                >删除</el-button>
               </template>
             </el-table-column>
           </el-table>
         </div>
       </el-container>
     </el-container>
+    <bird-dialog v-model="createBirdModalVisible" @on-bird-create="createBird"/>
     <v-tour name="myTour" :steps="steps" :callbacks="tourCallbacks"></v-tour>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
-import { FlappyBirdGameEngine } from "./modules/game/FlappyBirdGame";
-import Bird from "./modules/game/Bird";
+import { FlappyBirdGameEngine } from "@/modules/game/FlappyBirdGame";
+import BirdDialog from "@/components/BirdDialog.vue";
+import Bird from "@/modules/game/Bird";
 @Component({
-  components: {}
+  components: {
+    BirdDialog
+  }
 })
 export default class App extends Vue {
   public game: any = null;
   public birds: Bird[] = [];
   public speedLevel: string = "低速";
+  public createBirdModalVisible: boolean = false;
+  public systemCreateBird: Bird | null = null;
   public tourCallbacks: any = {
+    onStart: () => {
+      if (this.birds.length < 1) {
+        const bird = new Bird();
+        this.createBird(bird);
+        this.systemCreateBird = bird;
+      }
+    },
     onStop: (flag: any) => {
       localStorage.setItem("guide", "true");
+      if (this.systemCreateBird) {
+        this.removeBird(this.systemCreateBird);
+        this.systemCreateBird = null;
+      }
     }
   };
   public steps: any[] = [
@@ -114,7 +131,7 @@ export default class App extends Vue {
       target: '[data-v-step="4"]',
       content: "点此调整游戏运行的速度"
     },
-        {
+    {
       target: '[data-v-step="5"]',
       content:
         "点此基于当前的数据进行模型训练<br>训练完成后将自动使用该模型测试游戏"
@@ -150,8 +167,8 @@ export default class App extends Vue {
     }
     this.game.display();
   }
-  public createBird() {
-    this.game.birdStore.save(new Bird());
+  public createBird(bird: Bird) {
+    this.game.birdStore.save(bird);
   }
   public teachBird(bird: Bird) {
     this.game.setBird(bird);
@@ -172,9 +189,6 @@ export default class App extends Vue {
   public mounted() {
     this.game = new FlappyBirdGameEngine("flappy");
     this.birds = this.game.findAllBirds();
-    if (this.birds.length < 1) {
-      this.createBird();
-    }
     if (!localStorage.getItem("guide")) {
       this.help();
     }

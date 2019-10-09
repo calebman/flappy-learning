@@ -21,6 +21,8 @@ export class FlappyBirdGameEngine {
   private readonly pipetopImg: any;
   private readonly pipebottomImg: any;
   private readonly domId: string;
+  private width: number = 0;
+  private height: number = 0;
   private canvas: any;
   private ctx: any;
   private pipes: Pipe[] = [];
@@ -52,6 +54,8 @@ export class FlappyBirdGameEngine {
     if (this.canvas) {
       this.loadImages();
       this.ctx = this.canvas.getContext('2d');
+      this.width = this.canvas.width;
+      this.height = this.canvas.height;
     } else {
       // tslint:disable-next-line:no-console
       console.error(`Load canvas error with dom id ${this.domId}`);
@@ -251,7 +255,7 @@ export class FlappyBirdGameEngine {
         break;
       }
     }
-    return [y, nextHollHeight];
+    return [y / this.height, nextHollHeight / this.height];
   }
 }
 
