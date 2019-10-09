@@ -147,7 +147,7 @@ export default class Bird extends StoreItem {
    */
   public judge(x1: number, x2: number): boolean {
     if (this.alive && this.useAI && this.model) {
-      const { inputMax, inputMin, labelMin, labelMax } = this.generatorTrainData();
+      const { inputMax, inputMin, labelMin, labelMax } = this.generatorTrainData(true);
       const input = tf.tensor2d([x1, x2], [1, 2])
         .sub(inputMin)
         .div(inputMax.sub(inputMin));
@@ -155,7 +155,8 @@ export default class Bird extends StoreItem {
         .mul(labelMax.sub(labelMin))
         .add(labelMin)
         .dataSync();
-      return prediction[0] > this.threshold;
+      // 跳跃的可能性与保持不变的可能性比较
+      return prediction[1] > prediction[0];
     }
     return false;
   }
@@ -166,8 +167,9 @@ export default class Bird extends StoreItem {
   public async train() {
     this.trainLoading = true;
     const model = this.createModel();
+    tfvis.visor().open();
     tfvis.show.modelSummary({ name: 'Modal Summary' }, model);
-    const { inputs, labels } = this.generatorTrainData(false);
+    const { inputs, labels } = this.generatorTrainData();
     model.compile({
       optimizer: tf.train.adam(),
       loss: tf.losses.meanSquaredError,
@@ -188,7 +190,9 @@ export default class Bird extends StoreItem {
     tf.io.removeModel(`indexeddb://${BIRD_MODEL_STORE_SUFFIX}-${this.getId()}`);
     await model.save(`indexeddb://${BIRD_MODEL_STORE_SUFFIX}-${this.getId()}`);
     this.trainCnt++;
-    tfvis.visor().close();
+    if (tfvis.visor().isOpen()) {
+      tfvis.visor().close();
+    }
     this.trainLoading = false;
     this.model = model;
     return result;
@@ -244,14 +248,14 @@ export default class Bird extends StoreItem {
    const  model = tf.sequential();
    model.add(tf.layers.dense({ units: 2, inputShape: [2], useBias: true }));
    this.modelOptions.forEach((o) =>  model.add(tf.layers.dense(o)));
-   model.add(tf.layers.dense({ units: 1, useBias: true }));
+   model.add(tf.layers.dense({ units: 2, useBias: true }));
    return model;
   }
 
   /**
    * 构造训练数据
    */
-  private generatorTrainData(useCache: boolean = true): any {
+  private generatorTrainData(useCache: boolean = false): any {
     this.getTrainStorage();
     if (this.formatTrainData !== null && useCache) {
       return this.formatTrainData;
@@ -266,10 +270,11 @@ export default class Bird extends StoreItem {
 
       // Step 2. Convert data to Tensor
       const inputs = data.map((d) => [d[0], d[1]]);
-      const labels = data.map((d) => d[2]);
+      // labels [保持不变的可能性, 跳跃的可能性]
+      const labels = data.map((d) => d[2] === 1 ? [0, 1] : [1, 0]);
 
       const inputTensor = tf.tensor2d(inputs, [inputs.length, 2]);
-      const labelTensor = tf.tensor2d(labels, [labels.length, 1]);
+      const labelTensor = tf.tensor2d(labels, [labels.length, 2]);
 
       // Step 3. Normalize the data to the range 0 - 1 using min-max scaling
       const inputMax = inputTensor.max();
@@ -279,8 +284,7 @@ export default class Bird extends StoreItem {
 
       const normalizedInputs = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
       const normalizedLabels = labelTensor.sub(labelMin).div(labelMax.sub(labelMin));
-
-      return {
+      this.formatTrainData = {
         inputs: normalizedInputs,
         labels: normalizedLabels,
         // Return the min/max bounds so we can use them later.
@@ -289,6 +293,7 @@ export default class Bird extends StoreItem {
         labelMax,
         labelMin,
       };
+      return   this.formatTrainData;
     });
   }
 }
