@@ -15,7 +15,6 @@ export default class Bird extends StoreItem {
       id: obj.id,
       maxScore: obj.maxScore || 0,
       aiMaxScore: obj.aiMaxScore || 0,
-      threshold: obj.threshold || 0.0375,
       createAt: obj.createAt || new Date().getTime(),
       trainCnt: obj.trainCnt || 0,
       trainDataCnt: obj.trainDataCnt || 0,
@@ -29,7 +28,6 @@ export default class Bird extends StoreItem {
       id: bird.getId(),
       maxScore: bird.maxScore,
       aiMaxScore: bird.aiMaxScore,
-      threshold: bird.threshold,
       createAt: bird.createAt,
       trainCnt: bird.trainCnt,
       trainDataCnt: bird.trainDataCnt,
@@ -50,7 +48,6 @@ export default class Bird extends StoreItem {
   public score: number = 0;
   public maxScore: number = 0;
   public aiMaxScore: number = 0;
-  public threshold: number = 0.0375;
   public formatTrainData: any = null;
   public useAI: boolean = false;
   public createAt: number = new Date().getTime();
