@@ -7,19 +7,7 @@
     </el-steps>
     <div class="bird-dialog-content">
       <div v-show="step === 1">
-        <el-drawer title="编辑节点" :visible.sync="drawerVisible" :before-close="() => (drawerVisible = false)">
-          <el-form :model="unitForm">
-            <el-form-item label="活动名称" label-width="80px">
-              <el-input v-model="unitForm.name" autocomplete="off"></el-input>
-            </el-form-item>
-            <el-form-item label="活动区域" label-width="80px">
-              <el-select v-model="unitForm.region" placeholder="请选择活动区域">
-                <el-option label="区域一" value="shanghai"></el-option>
-                <el-option label="区域二" value="beijing"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-form>
-        </el-drawer>
+       
       </div>
       <div v-show="step === 2">
         <span>请设置迭代次数：</span>
@@ -61,7 +49,7 @@ export default class BirdDialog extends Vue {
   public visible: Boolean = false;
   public step: number = 1;
   public maxStep: number = 2;
-  public epochs: number = 50;
+  public epochs: number = 20;
   public drawerVisible: Boolean = true;
   public unitForm: any = {};
   public prev() {

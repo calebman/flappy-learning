@@ -55,8 +55,8 @@ export default class Bird extends StoreItem {
   public trainDataCnt: number = 0;
   private model: any;
   private trainStorage: IStore<TrainData> | undefined;
-  private readonly modelOptions: any[] = [{useBias: true, units: 4}];
-  private readonly epochs: number = 50;
+  private readonly modelOptions: any[] = [{ useBias: true, units: 4 }];
+  private readonly epochs: number = 20;
   private modelLoading: boolean = false;
   private trainLoading: boolean = false;
 
@@ -138,16 +138,23 @@ export default class Bird extends StoreItem {
   }
 
   /**
-   * 自动决策函数
-   * @param x1 输入信息1
-   * @param x2 输入信息2
+   * 预测函数
+   * @param data 输入信息
    */
-  public judge(x1: number, x2: number): boolean {
+  public predict(data: number[]): any {
+    const input = tf.tensor2d(data, [1, data.length]);
+    return this.model.predict(input).dataSync();
+  }
+
+  /**
+   * 自动决策函数
+   * @param data 输入信息
+   */
+  public judge(data: number[]): boolean {
     if (this.alive && this.useAI && this.model) {
-      const input = tf.tensor2d([x1, x2], [1, 2]);
-      const prediction = this.model.predict(input)
-        .dataSync();
+      const prediction = this.predict(data);
       // 跳跃的可能性与保持不变的可能性比较
+      // tslint:disable-next-line:no-console
       return prediction[1] > prediction[0];
     }
     return false;
@@ -226,7 +233,7 @@ export default class Bird extends StoreItem {
       }
     }
     if (model == null) {
-     model = this.createModel();
+      model = this.createModel();
     }
     this.model = model;
     this.modelLoading = false;
@@ -237,11 +244,11 @@ export default class Bird extends StoreItem {
    * 创建一个新的模型
    */
   private createModel() {
-   const  model = tf.sequential();
-   model.add(tf.layers.dense({ units: 2, inputShape: [2], useBias: true }));
-   this.modelOptions.forEach((o) =>  model.add(tf.layers.dense(o)));
-   model.add(tf.layers.dense({ units: 2, useBias: true }));
-   return model;
+    const model = tf.sequential();
+    model.add(tf.layers.dense({ units: 2, inputShape: [3], useBias: true }));
+    this.modelOptions.forEach((o) => model.add(tf.layers.dense(o)));
+    model.add(tf.layers.dense({ units: 2, useBias: true }));
+    return model;
   }
 
   /**
@@ -256,16 +263,18 @@ export default class Bird extends StoreItem {
     if (data.length < 1) {
       throw new Error('训练数据不足');
     }
+    // 预处理归一化数据
     return tf.tidy(() => {
       // Step 1. Shuffle the data
       tf.util.shuffle(data);
       // Step 2. Convert data to Tensor
-      const inputs = data.map((d) => [d[0], d[1]]);
+      const inputs = data.map((d) => [d[0], d[1], d[2]]);
       // labels [保持不变的可能性, 跳跃的可能性]
-      const labels = data.map((d) => d[2] === 1 ? [0, 1] : [1, 0]);
-      const inputTensor = tf.tensor2d(inputs, [inputs.length, 2]);
+      const dumpPossibility = data.filter((o) => o[3] === 1).length / data.length;
+      const labels = data.map((d) => d[3] === 1 ? [0, 1 - dumpPossibility] : [dumpPossibility, 0]);
+      const inputTensor = tf.tensor2d(inputs, [inputs.length, 3]);
       const labelTensor = tf.tensor2d(labels, [labels.length, 2]);
-      return  {
+      return {
         inputs: inputTensor,
         labels: labelTensor,
       };

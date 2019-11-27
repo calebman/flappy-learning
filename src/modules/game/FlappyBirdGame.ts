@@ -105,15 +105,17 @@ export class FlappyBirdGameEngine {
       return;
     }
     this.backgroundx += backgroundSpeed;
-    const trainData = this.generatorTrainData();
 
     if (bird.alive) {
-      if (bird.judge(trainData[0], trainData[1])) {
-        bird.flap();
+      if (pipes.length > 0) {
+        const trainData = this.generatorTrainData();
+        if (bird.judge(trainData)) {
+          bird.flap();
+        }
+        trainData.push(bird.isdump ? 1 : 0);
+        // 持久化
+        bird.saveTrainData(trainData);
       }
-      trainData.push(bird.isdump ? 1 : 0);
-      // 持久化
-      bird.saveTrainData(trainData);
       bird.update();
       if (bird.isDead(height, pipes)) {
         bird.alive = false;
@@ -248,14 +250,15 @@ export class FlappyBirdGameEngine {
     const pipes = this.pipes;
     const x = this.bird.x;
     const y = this.bird.y;
-    let nextHollHeight = 0;
+    let nextHoll = pipes[0];
     for (let i = 0; i < pipes.length; i += 2) {
       if (pipes[i].x + pipes[i].width > x) {
-        nextHollHeight = pipes[i].height;
+        nextHoll = pipes[i];
         break;
       }
     }
-    return [y / this.height, nextHollHeight / this.height];
+
+    return [y / this.height, nextHoll.height / this.height, x / (nextHoll.x + nextHoll.width) ];
   }
 }
 

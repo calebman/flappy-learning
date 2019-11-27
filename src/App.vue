@@ -66,6 +66,13 @@
                 >测试</el-button>
                 <el-button
                   size="mini"
+                  type="primary"
+                  :disabled="scope.row.trainCnt < 1"
+                   data-v-step="6"
+                  @click="predictData(scope.row)"
+                >数据预测</el-button>
+                <el-button
+                  size="mini"
                   type="danger"
                   data-v-step="8"
                   @click="removeBird(scope.row)"
@@ -76,7 +83,8 @@
         </div>
       </el-container>
     </el-container>
-    <bird-dialog v-model="createBirdModalVisible" @on-bird-create="createBird"/>
+    <bird-dialog v-model="createBirdModalVisible" @on-bird-create="createBird" />
+    <predict-data v-model="predictDataVisible" :bird="currentBird" />
     <v-tour name="myTour" :steps="steps" :callbacks="tourCallbacks"></v-tour>
   </div>
 </template>
@@ -85,10 +93,12 @@
 import { Component, Vue } from "vue-property-decorator";
 import { FlappyBirdGameEngine } from "@/modules/game/FlappyBirdGame";
 import BirdDialog from "@/components/BirdDialog.vue";
+import PredictData from "@/components/PredictData.vue";
 import Bird from "@/modules/game/Bird";
 @Component({
   components: {
-    BirdDialog
+    BirdDialog,
+    PredictData
   }
 })
 export default class App extends Vue {
@@ -97,6 +107,8 @@ export default class App extends Vue {
   public speedLevel: string = "低速";
   public createBirdModalVisible: boolean = false;
   public systemCreateBird: Bird | null = null;
+  public predictDataVisible: boolean = false;
+  public currentBird: Bird | null = null;
   public tourCallbacks: any = {
     onStart: () => {
       if (this.birds.length < 1) {
@@ -139,7 +151,7 @@ export default class App extends Vue {
     {
       target: '[data-v-step="6"]',
       content:
-        "根据机器的表现微调阈值使模型适应游戏<br>当小鸟撞于上部障碍物则调大阈值，反之调小"
+        "点此使用样本数据测试训练完成的模型"
     },
     {
       target: '[data-v-step="7"]',
@@ -152,6 +164,10 @@ export default class App extends Vue {
   ];
   public help() {
     this.$tours["myTour"].start();
+  }
+  public predictData(bird: Bird) {
+    this.currentBird = bird;
+    this.predictDataVisible = true;
   }
   public start() {
     this.game.start();
