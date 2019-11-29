@@ -271,7 +271,7 @@ export default class Bird extends StoreItem {
       const inputs = data.map((d) => [d[0], d[1], d[2]]);
       // labels [保持不变的可能性, 跳跃的可能性]
       const dumpPossibility = data.filter((o) => o[3] === 1).length / data.length;
-      const labels = data.map((d) => d[3] === 1 ? [0, 1 - dumpPossibility] : [dumpPossibility, 0]);
+      const labels = data.map((d) => d[3] === 1 ? [0, Math.pow(1 - dumpPossibility, 10)] : [dumpPossibility, 0]);
       const inputTensor = tf.tensor2d(inputs, [inputs.length, 3]);
       const labelTensor = tf.tensor2d(labels, [labels.length, 2]);
       return {
