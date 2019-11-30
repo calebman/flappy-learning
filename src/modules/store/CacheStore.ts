@@ -23,7 +23,9 @@ export abstract class CacheStore<T extends StoreItem> implements IStore<T> {
 
   public save(item: T): T {
     if (item.getId() === undefined || item.getId() === null) {
-      item.setId(this.caches.length + 1);
+      const lastId = this.caches[this.caches.length - 1].getId();
+      const autoIndex = lastId ? parseInt(lastId.toString(), 10) : this.caches.length;
+      item.setId(autoIndex + 1);
     }
     try {
       this.findIndexById(item.getId());

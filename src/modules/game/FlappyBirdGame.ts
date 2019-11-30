@@ -3,8 +3,8 @@ import Bird from './Bird';
 import FlappyBirdGameConfig from './FlappyBirdGameConfig';
 import { StoreType, IStore } from '../store/IStore';
 import StoreFactory from '../store/StoreFactory';
+import TrainData from './TrainData';
 const BIRD_STORE_SUFFIX = 'flappy-bird-game-engine-birds';
-
 /**
  * FlappyBird游戏引擎
  */

@@ -12,8 +12,8 @@
         <el-table-column prop="x3" label="障碍距离" align="center"></el-table-column>
       </el-table-column>
       <el-table-column label="预测值" align="center">
-        <el-table-column prop="y1" label="不变概率" align="center"></el-table-column>
-        <el-table-column prop="y2" label="跳跃概率" align="center"></el-table-column>
+        <el-table-column prop="y1" label="跳跃概率" align="center"></el-table-column>
+        <el-table-column prop="y2" label="不变概率" align="center"></el-table-column>
       </el-table-column>
       <el-table-column label="正确操作" align="center">
          <template slot-scope="scope">
@@ -82,7 +82,7 @@ export default class BirdDialog extends Vue {
         y1: prediction[0],
         y2: prediction[1],
         correct: data[3],
-        prediction: prediction[1] > prediction[0] ? 1 : 0
+        prediction: prediction[0] > prediction[1] ? 1 : 0
       };
     }).filter(o => o.correct !== o.prediction);
     this.loading = false;

@@ -1,4 +1,5 @@
 import Pipe from './Pipe';
+import Queue from './Queue';
 import { StoreType, StoreItem, IStore } from '../store/IStore';
 import TrainData from './TrainData';
 import StoreFactory from '../store/StoreFactory';
@@ -6,6 +7,7 @@ import * as tf from '@tensorflow/tfjs';
 import * as tfvis from '@tensorflow/tfjs-vis';
 const BIRD_TRAIN_STORE_SUFFIX = 'bird-train-data';
 const BIRD_MODEL_STORE_SUFFIX = 'bird-model';
+const inputSize = 3;
 
 
 export default class Bird extends StoreItem {
@@ -56,9 +58,11 @@ export default class Bird extends StoreItem {
   private model: any;
   private trainStorage: IStore<TrainData> | undefined;
   private readonly modelOptions: any[] = [{ useBias: true, units: 4 }];
-  private readonly epochs: number = 20;
+  private readonly epochs: number = 10;
   private modelLoading: boolean = false;
   private trainLoading: boolean = false;
+  private trainDataQueue: Queue<TrainData> = new Queue();
+  private throwTrainDataCount: number = 260;
 
 
   public constructor(options: any = {}) {
@@ -121,6 +125,7 @@ export default class Bird extends StoreItem {
         this.y + this.height < pipes[i].y
       )) {
         dead = true;
+        this.trainDataQueue = new Queue();
       }
     }
     return dead;
@@ -132,8 +137,14 @@ export default class Bird extends StoreItem {
    */
   public saveTrainData(trainData: number[]): void {
     if (!this.useAI) {
-      this.getTrainStorage().save(new TrainData(trainData));
-      this.trainDataCnt++;
+      this.trainDataQueue.push(new TrainData(trainData));
+      if (this.trainDataQueue.size() > this.throwTrainDataCount) {
+        const data = this.trainDataQueue.pop();
+        if (data) {
+          this.getTrainStorage().save(data);
+          this.trainDataCnt++;
+        }
+      }
     }
   }
 
@@ -142,7 +153,7 @@ export default class Bird extends StoreItem {
    * @param data 输入信息
    */
   public predict(data: number[]): any {
-    const input = tf.tensor2d(data, [1, data.length]);
+    const input = tf.tensor2d(data.slice(0, inputSize), [1, inputSize]);
     return this.model.predict(input).dataSync();
   }
 
@@ -155,7 +166,7 @@ export default class Bird extends StoreItem {
       const prediction = this.predict(data);
       // 跳跃的可能性与保持不变的可能性比较
       // tslint:disable-next-line:no-console
-      return prediction[1] > prediction[0];
+      return prediction[0] > prediction[1];
     }
     return false;
   }
@@ -169,6 +180,14 @@ export default class Bird extends StoreItem {
     tfvis.visor().open();
     tfvis.show.modelSummary({ name: 'Modal Summary' }, model);
     const { inputs, labels } = this.generatorTrainData();
+    // const focalLoss = (logits, labels, gamma) => {
+    //   const softmax = tf.reshape(tf.nn.softmax(logits), [-1]);
+    //   const labels = tf.range(0, logits.shape[0]) * logits.shape[1] + labels;
+    //   const prob = tf.gather(softmax, labels);
+    //   const weight = tf.pow(tf.subtract(1., prob), gamma);
+    //   const loss = -tf.reduce_mean(tf.multiply(weight, tf.log(prob)));
+    //   return loss;
+    // };
     model.compile({
       optimizer: tf.train.adam(),
       loss: tf.losses.meanSquaredError,
@@ -245,7 +264,7 @@ export default class Bird extends StoreItem {
    */
   private createModel() {
     const model = tf.sequential();
-    model.add(tf.layers.dense({ units: 2, inputShape: [3], useBias: true }));
+    model.add(tf.layers.dense({ units: 2, inputShape: [inputSize], useBias: true }));
     this.modelOptions.forEach((o) => model.add(tf.layers.dense(o)));
     model.add(tf.layers.dense({ units: 2, useBias: true }));
     return model;
@@ -265,14 +284,35 @@ export default class Bird extends StoreItem {
     }
     // 预处理归一化数据
     return tf.tidy(() => {
+      const upsampling = (source: any[]) => {
+        // 上采样方案
+        const result = source.filter((o) => o[3] === 0);
+        const dumpData = source.filter((o) => o[3] === 1);
+        const normalData = source.filter((o) => o[3] === 0);
+        normalData.forEach((item, index) => {
+          result.push(dumpData[index % dumpData.length]);
+        });
+        return result;
+      };
+      // 下采样
+      const downsampling = (source: any[]) => {
+        // 上采样方案
+        const result = source.filter((o) => o[3] === 1);
+        const dumpData = source.filter((o) => o[3] === 1);
+        const normalData = source.filter((o) => o[3] === 0);
+        for (let i = 0; i < dumpData.length; i++) {
+          result.push(normalData[i]);
+        }
+        return result;
+      };
+      const trainData: any[] = upsampling(data);
       // Step 1. Shuffle the data
-      tf.util.shuffle(data);
+      tf.util.shuffle(trainData);
       // Step 2. Convert data to Tensor
-      const inputs = data.map((d) => [d[0], d[1], d[2]]);
-      // labels [保持不变的可能性, 跳跃的可能性]
-      const dumpPossibility = data.filter((o) => o[3] === 1).length / data.length;
-      const labels = data.map((d) => d[3] === 1 ? [0, Math.pow(1 - dumpPossibility, 10)] : [dumpPossibility, 0]);
-      const inputTensor = tf.tensor2d(inputs, [inputs.length, 3]);
+      const inputs = trainData.map((d) => d.slice(0, inputSize));
+      // labels [跳跃的可能性, 保持不变的可能性]
+      const labels = trainData.map((d) => d[3] === 1 ? [1, 0] : [0, 1]);
+      const inputTensor = tf.tensor2d(inputs, [inputs.length, inputSize]);
       const labelTensor = tf.tensor2d(labels, [labels.length, 2]);
       return {
         inputs: inputTensor,

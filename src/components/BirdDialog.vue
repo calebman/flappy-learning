@@ -49,7 +49,7 @@ export default class BirdDialog extends Vue {
   public visible: Boolean = false;
   public step: number = 1;
   public maxStep: number = 2;
-  public epochs: number = 20;
+  public epochs: number = 10;
   public drawerVisible: Boolean = true;
   public unitForm: any = {};
   public prev() {

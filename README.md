@@ -28,6 +28,10 @@
 
 ### 模型训练效果展示
 
+这里我人工玩了3万左右的数据量，相当于过了2500个障碍物，小鸟的最高得分是2400，具体运行效果如下
+
+![](https://resources.chenjianhui.site/2019-09-06-flappy-bird-learning-example.gif)
+
 ### 开发计划
 
 - [X] 参照[FlappyLearning](https://github.com/xviniette/FlappyLearning)完成游戏引擎开发
