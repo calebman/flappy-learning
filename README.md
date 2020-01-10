@@ -5,6 +5,8 @@
 
 基于用户生产游戏数据并根据反向传播算法生成决策模型参与游戏，游戏引擎与AI基于**Vuejs**+**TypeScript**+**Tensorflow.js**实现，**[点此在线预览](https://calebman.github.io/flappy-learning/)**
 
+相关博客[点此进入](https://chenjianhui.site/2019-09-06-machine-learning/)
+
 ### 流程设计
 
 ![](https://resources.chenjianhui.site/2019-09-06-run-flow.png)
