@@ -33,7 +33,7 @@ export default class BirdDialog extends Vue {
   @Prop(Boolean)
   public value: Boolean = false;
   @Prop(Bird)
-  public bird: Bird;
+  public bird: Bird = new Bird();
   @Watch("value")
   private valueChange(val: Boolean) {
     this.visible = val;
